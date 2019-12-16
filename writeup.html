@@ -2,7 +2,7 @@
 <html>
 <head><meta charset="utf-8" />
 
-<title>analysis</title>
+<title>writeup</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
@@ -13077,7 +13077,1660 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Some imports and functions that we used throughout this writeup:</p>
+<h1 id="Getting-Started">Getting Started<a class="anchor-link" href="#Getting-Started">&#182;</a></h1><h4 id="Imports">Imports<a class="anchor-link" href="#Imports">&#182;</a></h4><p>We make use of Python 3 along with a few imported libraries:</p>
+<ul>
+<li><a href="https://pandas.pydata.org/pandas-docs/stable/">pandas</a> and <a href="https://numpy.org/">numpy</a> to organize our data</li>
+<li><a href="https://matplotlib.org/">matplotlib</a> and <a href="https://seaborn.pydata.org/">seaborn</a> to visualize our data</li>
+<li><a href="https://scikit-learn.org/stable/">sklearn</a> to create models and make predictions based on our data</li>
+<li><a href="https://spotipy.readthedocs.io/en/latest/">spotipy</a>, which we will go into more below.</li>
+<li><a href="https://ipython.readthedocs.io/en/stable/api/generated/IPython.display.html">IPython</a> to help make our dataframes pretty while printing mid-cell</li>
+</ul>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">spotipy</span>
+<span class="kn">from</span> <span class="nn">spotipy.oauth2</span> <span class="k">import</span> <span class="n">SpotifyClientCredentials</span>
+<span class="kn">import</span> <span class="nn">spotipy.util</span> <span class="k">as</span> <span class="nn">util</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sb</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">pylab</span> <span class="k">as</span> <span class="nn">pl</span>
+
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">tree</span><span class="p">,</span> <span class="n">ensemble</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">,</span> <span class="n">model_selection</span><span class="p">,</span> <span class="n">metrics</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">tree</span><span class="p">,</span> <span class="n">ensemble</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">,</span> <span class="n">model_selection</span><span class="p">,</span> <span class="n">metrics</span>
+<span class="kn">from</span> <span class="nn">sklearn.neighbors</span> <span class="k">import</span> <span class="n">KNeighborsClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="k">import</span> <span class="n">RandomForestClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">train_test_split</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="k">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">HTML</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Authorization">Authorization<a class="anchor-link" href="#Authorization">&#182;</a></h4><p>Spotipy is really cool! It enables us to gain access to the spotify API and use it in a more "pythonic" way (simply put, easier for us to use in python). Once we went on the Spotify website and apply for access to the API, we used the ID and Secret ID given to us in our authorization code below, so we can gain access to the API and parse through any data we use.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">sb</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+
+<span class="n">sp</span> <span class="o">=</span> <span class="n">spotipy</span><span class="o">.</span><span class="n">Spotify</span><span class="p">()</span>
+        
+<span class="n">cid</span> <span class="o">=</span> <span class="s2">&quot;6d49981d346842a1844ab1612afae8ba&quot;</span>
+<span class="n">csec</span> <span class="o">=</span> <span class="s2">&quot;e33407ff688c4d48908d5f5286fe8e41&quot;</span>
+
+
+<span class="n">client_credentials_manager</span> <span class="o">=</span> <span class="n">SpotifyClientCredentials</span><span class="p">(</span><span class="n">client_id</span><span class="o">=</span><span class="n">cid</span><span class="p">,</span> <span class="n">client_secret</span><span class="o">=</span><span class="n">csec</span><span class="p">)</span>
+<span class="n">sp</span> <span class="o">=</span> <span class="n">spotipy</span><span class="o">.</span><span class="n">Spotify</span><span class="p">(</span><span class="n">client_credentials_manager</span><span class="o">=</span><span class="n">client_credentials_manager</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Data-Collection-and-Processing">Data Collection and Processing<a class="anchor-link" href="#Data-Collection-and-Processing">&#182;</a></h1><h3 id="Creating-Playlists">Creating Playlists<a class="anchor-link" href="#Creating-Playlists">&#182;</a></h3><p>Now we get to the actual data collection process. As soon as we started this project, we hit the question: "How are we going to get the data on every grammy winner and nominee for the past 20 years?"</p>
+<p>Obviously there's no "Grammy" section on Spotify, so we decided to cheat a little bit. Every song, album, user, and playlist has a specific ID within Spotify called its URI, which can easily be found through the settings of whatever page you are on. The important part here is that each playlist has its own ID, so we made our own playlists containing all the data we need!</p>
+<p>We created playlists for the winners and the nominees of the past 20 years for Song of the Year, Album of the Year, and Best New Artist. With these playlists, we can access all the data we want much faster, instead of having to manually go through every song that we want.</p>
+<h3 id="What-data-do-we-actually-want?">What data do we actually want?<a class="anchor-link" href="#What-data-do-we-actually-want?">&#182;</a></h3><p>Let's start with Song of the Year. In spotify, they assign numerical float values to each song's characteristics. Listed below are the values we are going to retrieve for each song, descriptions retrieved from the <a href="https://developer.spotify.com/documentation/web-api/reference/tracks/get-audio-features/">Spotify API</a>.</p>
+<ul>
+<li>Name: Name of the song</li>
+<li>Release Date: Release date of the song</li>
+<li>Popularity: How "popular" is the song compared to other songs currently</li>
+<li>Danceability: How suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity. A value of 0.0 is least danceable and 1.0 is most danceable. </li>
+<li>Energy: Measure from 0.0 to 1.0 and represents a perceptual measure of intensity and activity. Typically, energetic tracks feel fast, loud, and noisy. For example, death metal has high energy, while a Bach prelude scores low on the scale. Perceptual features contributing to this attribute include dynamic range, perceived loudness, timbre, onset rate, and general entropy. </li>
+<li>Loudness: The overall loudness of the track in decibals</li>
+<li>Speechiness: The presence of spoken words in a track. The more exclusively speech-like the recording (e.g. talk show, audio book, poetry), the closer to 1.0 the attribute value.</li>
+<li>Acousticness: A confidence measure from 0.0 to 1.0 of whether the track is acoustic. 1.0 represents high confidence the track is acoustic. </li>
+<li>Liveness: Detects the presence of an audience in the recording. Higher liveness values represent an increased probability that the track was performed live.</li>
+<li>Valence:  A measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).</li>
+<li>Tempo: The overall estimated tempo of a track in beats per minute (BPM).</li>
+</ul>
+<p>We also keep track of if a particular song won or lost in the year that it was nominated. The ideology here is that we use a song's characteristics and find patterns between the ones who won and the ones who lost using Machine Learning, in order to potentially predict this year's winners.</p>
+<p>Finally, we create a dataframe to store all of this data. Keep in mind that Spotify API calls take a bit of time, especially when you run it on hundreds of songs (album of the year has over 500 songs, each with a lot of data to parse through), so we exported our dataframe to a CSV file immediately so accessing the data would be easier and we only need to run this code once.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#Access the playlist for song of the year winners for the past 20 years using the URI of the user (Tomi Olusina) </span>
+<span class="c1">#who made it and the playlist URI</span>
+<span class="n">playlist_tracks</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">user_playlist_tracks</span><span class="p">(</span><span class="s1">&#39;22b7g6udnfkubfplnsla3ww5a&#39;</span><span class="p">,</span> <span class="s1">&#39;7pF07PQEdD4e0AEoo6ue9G&#39;</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="s1">&#39;items,uri,name,id,total&#39;</span><span class="p">,</span> <span class="n">market</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">)</span>
+
+<span class="c1">#Create arrays for every category in our dataframe</span>
+<span class="n">name</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">date</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">pop</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">dance</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">energy</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">loud</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">speech</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">acous</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">live</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">valence</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">tempo</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">win</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1">#Parse through the playlist data and add the values we are looking for for every song in the playlist</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">playlist_tracks</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]:</span>
+    <span class="n">name</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+    <span class="n">date</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;release_date&#39;</span><span class="p">])</span>
+    <span class="n">pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;popularity&#39;</span><span class="p">])</span>
+    <span class="n">dance</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;danceability&#39;</span><span class="p">])</span>
+    <span class="n">energy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;energy&#39;</span><span class="p">])</span>
+    <span class="n">loud</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;loudness&#39;</span><span class="p">])</span>
+    <span class="n">speech</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;speechiness&#39;</span><span class="p">])</span>
+    <span class="n">acous</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;acousticness&#39;</span><span class="p">])</span>
+    <span class="n">live</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;liveness&#39;</span><span class="p">])</span>
+    <span class="n">valence</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;valence&#39;</span><span class="p">])</span>
+    <span class="n">tempo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;tempo&#39;</span><span class="p">])</span>
+    <span class="n">win</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    
+<span class="c1">#Now access the nominees for song of the year for the past 20 years and repeat the same process</span>
+<span class="n">playlist_tracks</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">user_playlist_tracks</span><span class="p">(</span><span class="s1">&#39;22b7g6udnfkubfplnsla3ww5a&#39;</span><span class="p">,</span> <span class="s1">&#39;4OzkYLxp0VzMNlYBXq2faU&#39;</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="s1">&#39;items,uri,name,id,total&#39;</span><span class="p">,</span> <span class="n">market</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">playlist_tracks</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]:</span>
+    <span class="n">name</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+    <span class="n">date</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;release_date&#39;</span><span class="p">])</span>
+    <span class="n">pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;popularity&#39;</span><span class="p">])</span>
+    <span class="n">dance</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;danceability&#39;</span><span class="p">])</span>
+    <span class="n">energy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;energy&#39;</span><span class="p">])</span>
+    <span class="n">loud</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;loudness&#39;</span><span class="p">])</span>
+    <span class="n">speech</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;speechiness&#39;</span><span class="p">])</span>
+    <span class="n">acous</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;acousticness&#39;</span><span class="p">])</span>
+    <span class="n">live</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;liveness&#39;</span><span class="p">])</span>
+    <span class="n">valence</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;valence&#39;</span><span class="p">])</span>
+    <span class="n">tempo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;tempo&#39;</span><span class="p">])</span>
+    <span class="n">win</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1">#Create a dataframe and add all the columns made</span>
+<span class="n">songdata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Date Released&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Popularity&quot;</span><span class="p">,</span> <span class="n">pop</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;Danceability&quot;</span><span class="p">,</span> <span class="n">dance</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;Energy&quot;</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;Loudness&quot;</span><span class="p">,</span> <span class="n">loud</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="s2">&quot;Speechiness&quot;</span><span class="p">,</span> <span class="n">speech</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s2">&quot;Acousticness&quot;</span><span class="p">,</span> <span class="n">acous</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;Liveness&quot;</span><span class="p">,</span> <span class="n">live</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="s2">&quot;Valence&quot;</span><span class="p">,</span> <span class="n">valence</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;Tempo&quot;</span><span class="p">,</span> <span class="n">tempo</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="s2">&quot;Did They Win?&quot;</span><span class="p">,</span> <span class="n">win</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="c1">#Send it to a CSV file</span>
+<span class="n">songdata</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;topsongs.csv&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">songdb</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;topsongs.csv&quot;</span><span class="p">)</span>
+<span class="n">songdb</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[4]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Name</th>
+      <th>Date Released</th>
+      <th>Popularity</th>
+      <th>Danceability</th>
+      <th>Energy</th>
+      <th>Loudness</th>
+      <th>Speechiness</th>
+      <th>Acousticness</th>
+      <th>Liveness</th>
+      <th>Valence</th>
+      <th>Tempo</th>
+      <th>Did They Win?</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Single Ladies (Put a Ring on It)</td>
+      <td>2008-11-14</td>
+      <td>71</td>
+      <td>0.426</td>
+      <td>0.584</td>
+      <td>-5.293</td>
+      <td>0.2960</td>
+      <td>0.03830</td>
+      <td>0.1880</td>
+      <td>0.272</td>
+      <td>193.437</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Need You Now</td>
+      <td>2010-01-01</td>
+      <td>69</td>
+      <td>0.587</td>
+      <td>0.622</td>
+      <td>-5.535</td>
+      <td>0.0303</td>
+      <td>0.09270</td>
+      <td>0.2000</td>
+      <td>0.231</td>
+      <td>107.943</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Rolling in the Deep</td>
+      <td>2011-01-19</td>
+      <td>77</td>
+      <td>0.730</td>
+      <td>0.770</td>
+      <td>-5.114</td>
+      <td>0.0298</td>
+      <td>0.13800</td>
+      <td>0.0473</td>
+      <td>0.507</td>
+      <td>104.948</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>We Are Young (feat. Janelle Monáe)</td>
+      <td>2012-02-14</td>
+      <td>76</td>
+      <td>0.378</td>
+      <td>0.638</td>
+      <td>-5.576</td>
+      <td>0.0750</td>
+      <td>0.02000</td>
+      <td>0.0849</td>
+      <td>0.735</td>
+      <td>184.086</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Royals</td>
+      <td>2013-01-01</td>
+      <td>79</td>
+      <td>0.674</td>
+      <td>0.428</td>
+      <td>-9.504</td>
+      <td>0.1220</td>
+      <td>0.12100</td>
+      <td>0.1320</td>
+      <td>0.337</td>
+      <td>84.878</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <td>98</td>
+      <td>Umbrella</td>
+      <td>2008-06-02</td>
+      <td>81</td>
+      <td>0.583</td>
+      <td>0.829</td>
+      <td>-4.603</td>
+      <td>0.1340</td>
+      <td>0.00864</td>
+      <td>0.0426</td>
+      <td>0.575</td>
+      <td>174.028</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>99</td>
+      <td>American Boy</td>
+      <td>2008-03-28</td>
+      <td>80</td>
+      <td>0.727</td>
+      <td>0.729</td>
+      <td>-2.990</td>
+      <td>0.3260</td>
+      <td>0.17100</td>
+      <td>0.0700</td>
+      <td>0.512</td>
+      <td>117.932</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>100</td>
+      <td>Chasing Pavements</td>
+      <td>2008-01-28</td>
+      <td>68</td>
+      <td>0.614</td>
+      <td>0.470</td>
+      <td>-6.090</td>
+      <td>0.0255</td>
+      <td>0.29100</td>
+      <td>0.1110</td>
+      <td>0.329</td>
+      <td>80.045</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>101</td>
+      <td>I'm Yours</td>
+      <td>2008-05-12</td>
+      <td>84</td>
+      <td>0.686</td>
+      <td>0.457</td>
+      <td>-8.322</td>
+      <td>0.0468</td>
+      <td>0.59500</td>
+      <td>0.1050</td>
+      <td>0.718</td>
+      <td>150.953</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>102</td>
+      <td>Love Song</td>
+      <td>2007-07-03</td>
+      <td>77</td>
+      <td>0.583</td>
+      <td>0.786</td>
+      <td>-3.142</td>
+      <td>0.0301</td>
+      <td>0.02080</td>
+      <td>0.1880</td>
+      <td>0.573</td>
+      <td>123.052</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+<p>103 rows × 12 columns</p>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Album-of-the-Year">Album of the Year<a class="anchor-link" href="#Album-of-the-Year">&#182;</a></h3><p>Now we move to Album of the Year nominees and winners of the past 20 years. Obviously, you can't make a playlist of albums, so the workaround we created was simply creating playlists from one song from each album. From there, we could access the album's URI in the song's data, and use that URI to get all the data we need.</p>
+<p>The data collection process here is very similar, but there is one slight difference. The song's characteristics like danceability and energy are only applicable to songs, not albums in the Spotify API. Therefore, to get the characteristics of an album, we take these characteristics and average them over all the songs in the album. For example, we get the danceability of an album by averaging the danceabilities of every song in the album.</p>
+<p>Also, there was a bug in the data with one of the Taylor Swift albums and its URI, so we manually put in its URI and Name. Who knew she could be so problematic?</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#Get the songs for the winners once again from the playlist we made</span>
+<span class="n">playlist_albums</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">user_playlist_tracks</span><span class="p">(</span><span class="s1">&#39;22b7g6udnfkubfplnsla3ww5a&#39;</span><span class="p">,</span> <span class="s1">&#39;3q7RrjHTPcG1pAL3j4QcJF&#39;</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="s1">&#39;items,uri,name,id,total&#39;</span><span class="p">,</span> <span class="n">market</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">)</span>
+<span class="n">playlist_albums</span>
+
+<span class="c1">#smh Taylor</span>
+<span class="n">albums</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;2dqn5yOQWdyGwOpOIi9O4x&#39;</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Fearless&#39;</span><span class="p">]</span>
+<span class="n">date</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">pop</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">dance</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">energy</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">loud</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">speech</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">acous</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">live</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">valence</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">tempo</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">win</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1">#Populate the name/date/popularity arrays now since that data is accessible, and get a list of the album URIs</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">playlist_albums</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]:</span>
+    <span class="n">name</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+    <span class="n">date</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;release_date&#39;</span><span class="p">])</span>
+    <span class="n">pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;popularity&#39;</span><span class="p">])</span>
+    <span class="n">win</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">albums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+
+<span class="c1">#Again, smh Taylor</span>
+<span class="k">del</span> <span class="n">albums</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="k">del</span> <span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">danceavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">energyavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">loudavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">speechavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">acousavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">liveavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">valenceavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">tempoavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="c1">#Go through each album, and get the avaerage characteristics for each album</span>
+<span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">albums</span><span class="p">:</span>
+    <span class="n">songs</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">album_tracks</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">songs</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]:</span>
+        <span class="n">danceavg</span> <span class="o">=</span> <span class="n">danceavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;danceability&#39;</span><span class="p">]</span>
+        <span class="n">energyavg</span> <span class="o">=</span> <span class="n">energyavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;energy&#39;</span><span class="p">]</span>
+        <span class="n">loudavg</span> <span class="o">=</span> <span class="n">loudavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;loudness&#39;</span><span class="p">]</span>
+        <span class="n">speechavg</span> <span class="o">=</span> <span class="n">speechavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;speechiness&#39;</span><span class="p">]</span>
+        <span class="n">acousavg</span> <span class="o">=</span> <span class="n">acousavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;acousticness&#39;</span><span class="p">]</span>
+        <span class="n">liveavg</span> <span class="o">=</span> <span class="n">liveavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;liveness&#39;</span><span class="p">]</span>
+        <span class="n">valenceavg</span> <span class="o">=</span> <span class="n">valenceavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;valence&#39;</span><span class="p">]</span>
+        <span class="n">tempoavg</span> <span class="o">=</span> <span class="n">tempoavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;tempo&#39;</span><span class="p">]</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">dance</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">danceavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">energy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">energyavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">loud</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loudavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">speech</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">speechavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">acous</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">acousavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">live</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">liveavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">valence</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">valenceavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">tempo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tempoavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">danceavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">energyavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">loudavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">speechavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">acousavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">liveavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">valenceavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">tempoavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    
+<span class="c1">#Repeat the process for nominees</span>
+<span class="n">playlist_albums</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">user_playlist_tracks</span><span class="p">(</span><span class="s1">&#39;22b7g6udnfkubfplnsla3ww5a&#39;</span><span class="p">,</span> <span class="s1">&#39;6ua8ZJ16YFgCou0ecqPgdV&#39;</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="s1">&#39;items,uri,name,id,total&#39;</span><span class="p">,</span> <span class="n">market</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">)</span>
+<span class="n">playlist_albums</span>
+
+<span class="n">albums</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">playlist_albums</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]:</span>
+    <span class="n">name</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+    <span class="n">date</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;release_date&#39;</span><span class="p">])</span>
+    <span class="n">pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;popularity&#39;</span><span class="p">])</span>
+    <span class="n">win</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">albums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+
+<span class="n">danceavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">energyavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">loudavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">speechavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">acousavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">liveavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">valenceavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">tempoavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+
+    
+<span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">albums</span><span class="p">:</span>
+    <span class="n">songs</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">album_tracks</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">songs</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]:</span>
+        <span class="n">danceavg</span> <span class="o">=</span> <span class="n">danceavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;danceability&#39;</span><span class="p">]</span>
+        <span class="n">energyavg</span> <span class="o">=</span> <span class="n">energyavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;energy&#39;</span><span class="p">]</span>
+        <span class="n">loudavg</span> <span class="o">=</span> <span class="n">loudavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;loudness&#39;</span><span class="p">]</span>
+        <span class="n">speechavg</span> <span class="o">=</span> <span class="n">speechavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;speechiness&#39;</span><span class="p">]</span>
+        <span class="n">acousavg</span> <span class="o">=</span> <span class="n">acousavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;acousticness&#39;</span><span class="p">]</span>
+        <span class="n">liveavg</span> <span class="o">=</span> <span class="n">liveavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;liveness&#39;</span><span class="p">]</span>
+        <span class="n">valenceavg</span> <span class="o">=</span> <span class="n">valenceavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;valence&#39;</span><span class="p">]</span>
+        <span class="n">tempoavg</span> <span class="o">=</span> <span class="n">tempoavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;tempo&#39;</span><span class="p">]</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">dance</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">danceavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">energy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">energyavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">loud</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loudavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">speech</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">speechavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">acous</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">acousavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">live</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">liveavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">valence</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">valenceavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">tempo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tempoavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">danceavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">energyavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">loudavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">speechavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">acousavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">liveavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">valenceavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">tempoavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">albumdata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Date Released&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Popularity&quot;</span><span class="p">,</span> <span class="n">pop</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;Danceability&quot;</span><span class="p">,</span> <span class="n">dance</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;Energy&quot;</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;Loudness&quot;</span><span class="p">,</span> <span class="n">loud</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="s2">&quot;Speechiness&quot;</span><span class="p">,</span> <span class="n">speech</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s2">&quot;Acousticness&quot;</span><span class="p">,</span> <span class="n">acous</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;Liveness&quot;</span><span class="p">,</span> <span class="n">live</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="s2">&quot;Valence&quot;</span><span class="p">,</span> <span class="n">valence</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;Tempo&quot;</span><span class="p">,</span> <span class="n">tempo</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="s2">&quot;Did They Win?&quot;</span><span class="p">,</span> <span class="n">win</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="n">albumdata</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;topalbums.csv&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">albumdb</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;topalbums.csv&quot;</span><span class="p">)</span>
+<span class="n">albumdb</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[5]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Name</th>
+      <th>Date Released</th>
+      <th>Popularity</th>
+      <th>Danceability</th>
+      <th>Energy</th>
+      <th>Loudness</th>
+      <th>Speechiness</th>
+      <th>Acousticness</th>
+      <th>Liveness</th>
+      <th>Valence</th>
+      <th>Tempo</th>
+      <th>Did They Win?</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Fearless</td>
+      <td>2008-11-10</td>
+      <td>60</td>
+      <td>0.592769</td>
+      <td>0.637308</td>
+      <td>-5.276000</td>
+      <td>0.032992</td>
+      <td>0.175937</td>
+      <td>0.145554</td>
+      <td>0.384231</td>
+      <td>113.235462</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>The Suburbs</td>
+      <td>2010</td>
+      <td>71</td>
+      <td>0.448625</td>
+      <td>0.721381</td>
+      <td>-7.534563</td>
+      <td>0.045250</td>
+      <td>0.217593</td>
+      <td>0.205238</td>
+      <td>0.418344</td>
+      <td>127.591062</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>21</td>
+      <td>2011-01-19</td>
+      <td>77</td>
+      <td>0.581091</td>
+      <td>0.534091</td>
+      <td>-6.081727</td>
+      <td>0.036018</td>
+      <td>0.439371</td>
+      <td>0.117536</td>
+      <td>0.414636</td>
+      <td>133.496909</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Babel</td>
+      <td>2012-09-21</td>
+      <td>52</td>
+      <td>0.404250</td>
+      <td>0.558167</td>
+      <td>-8.333750</td>
+      <td>0.038817</td>
+      <td>0.185863</td>
+      <td>0.127025</td>
+      <td>0.281533</td>
+      <td>116.001083</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Random Access Memories</td>
+      <td>2013-05-17</td>
+      <td>64</td>
+      <td>0.686462</td>
+      <td>0.585846</td>
+      <td>-10.704077</td>
+      <td>0.044315</td>
+      <td>0.287906</td>
+      <td>0.132877</td>
+      <td>0.488231</td>
+      <td>114.471077</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <td>99</td>
+      <td>These Days</td>
+      <td>2006-01-01</td>
+      <td>14</td>
+      <td>0.586674</td>
+      <td>0.567860</td>
+      <td>-7.979581</td>
+      <td>0.031730</td>
+      <td>0.485630</td>
+      <td>0.165735</td>
+      <td>0.530228</td>
+      <td>121.711581</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>100</td>
+      <td>In Rainbows</td>
+      <td>2007-12-28</td>
+      <td>61</td>
+      <td>0.529400</td>
+      <td>0.591700</td>
+      <td>-8.693000</td>
+      <td>0.038340</td>
+      <td>0.460245</td>
+      <td>0.093220</td>
+      <td>0.394620</td>
+      <td>121.130400</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>101</td>
+      <td>Tha Carter III</td>
+      <td>2008-01-01</td>
+      <td>75</td>
+      <td>0.679063</td>
+      <td>0.580375</td>
+      <td>-8.258250</td>
+      <td>0.225844</td>
+      <td>0.091419</td>
+      <td>0.258544</td>
+      <td>0.525188</td>
+      <td>125.076688</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>102</td>
+      <td>Viva La Vida or Death and All His Friends</td>
+      <td>2008-05-26</td>
+      <td>80</td>
+      <td>0.319700</td>
+      <td>0.658000</td>
+      <td>-8.284900</td>
+      <td>0.038630</td>
+      <td>0.115038</td>
+      <td>0.208800</td>
+      <td>0.261720</td>
+      <td>126.567200</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>103</td>
+      <td>Year Of The Gentleman</td>
+      <td>2008-01-01</td>
+      <td>72</td>
+      <td>0.684000</td>
+      <td>0.664833</td>
+      <td>-5.783250</td>
+      <td>0.060750</td>
+      <td>0.266825</td>
+      <td>0.142450</td>
+      <td>0.493583</td>
+      <td>131.838667</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+<p>104 rows × 12 columns</p>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Best-New-Artist">Best New Artist<a class="anchor-link" href="#Best-New-Artist">&#182;</a></h3><p>Finally, we get the data for best new artist. Our workaround here was to simply make playlists with any song from the artist, then use that song to get the artist's URI to work with.</p>
+<p>The data collection process is very similar once again, but there is much less data to work with in the Spotify API for this award. We simply retrieved the artist's name, number of followers, and popularity to make models and predictions for this award.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#Same process as before, just use the song&#39;s data from the playlist to access the artist&#39;s data</span>
+<span class="c1">#This is easier here because artist data is also included within the original playlist&#39;s data</span>
+<span class="n">playlist_artists</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">user_playlist_tracks</span><span class="p">(</span><span class="s1">&#39;22b7g6udnfkubfplnsla3ww5a&#39;</span><span class="p">,</span> <span class="s1">&#39;6Wu1dIW3n13jsx0WoODnlQ&#39;</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="s1">&#39;items,uri,name,id,total&#39;</span><span class="p">,</span> <span class="n">market</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">)</span>
+<span class="n">playlist_artists</span>
+
+<span class="n">name</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">followers</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">pop</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">win</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">playlist_artists</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]:</span>
+    <span class="n">name</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;artists&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+    <span class="n">artist</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">artist</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;artists&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+    <span class="n">followers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">artist</span><span class="p">[</span><span class="s1">&#39;followers&#39;</span><span class="p">][</span><span class="s1">&#39;total&#39;</span><span class="p">])</span>
+    <span class="n">pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">artist</span><span class="p">[</span><span class="s1">&#39;popularity&#39;</span><span class="p">])</span>
+    <span class="n">win</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    
+<span class="n">playlist_artists</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">user_playlist_tracks</span><span class="p">(</span><span class="s1">&#39;22b7g6udnfkubfplnsla3ww5a&#39;</span><span class="p">,</span> <span class="s1">&#39;6ua8ZJ16YFgCou0ecqPgdV&#39;</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="s1">&#39;items,uri,name,id,total&#39;</span><span class="p">,</span> <span class="n">market</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">)</span>
+<span class="n">playlist_artists</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">playlist_artists</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]:</span>
+    <span class="n">name</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;artists&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+    <span class="n">artist</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">artist</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;artists&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+    <span class="n">followers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">artist</span><span class="p">[</span><span class="s1">&#39;followers&#39;</span><span class="p">][</span><span class="s1">&#39;total&#39;</span><span class="p">])</span>
+    <span class="n">pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">artist</span><span class="p">[</span><span class="s1">&#39;popularity&#39;</span><span class="p">])</span>
+    <span class="n">win</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> 
+
+    
+<span class="n">artistdata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+<span class="n">artistdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">artistdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Followers&quot;</span><span class="p">,</span> <span class="n">followers</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">artistdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Popularity&quot;</span><span class="p">,</span> <span class="n">pop</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">artistdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;Did They Win&quot;</span><span class="p">,</span> <span class="n">win</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="n">artistdata</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;topartists.csv&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">artistdb</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;topartists.csv&quot;</span><span class="p">)</span>
+<span class="n">artistdb</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[6]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Name</th>
+      <th>Followers</th>
+      <th>Popularity</th>
+      <th>Did They Win</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Zac Brown Band</td>
+      <td>1874027</td>
+      <td>77</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Esperanza Spalding</td>
+      <td>236041</td>
+      <td>62</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Bon Iver</td>
+      <td>2490997</td>
+      <td>79</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>fun.</td>
+      <td>3313046</td>
+      <td>73</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Macklemore &amp; Ryan Lewis</td>
+      <td>2424691</td>
+      <td>78</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <td>98</td>
+      <td>Vince Gill</td>
+      <td>284995</td>
+      <td>66</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>99</td>
+      <td>Radiohead</td>
+      <td>4742554</td>
+      <td>82</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>100</td>
+      <td>Lil Wayne</td>
+      <td>8506468</td>
+      <td>91</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>101</td>
+      <td>Coldplay</td>
+      <td>23419831</td>
+      <td>93</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>102</td>
+      <td>Ne-Yo</td>
+      <td>4929963</td>
+      <td>82</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+<p>103 rows × 4 columns</p>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Current-Nominees">Current Nominees<a class="anchor-link" href="#Current-Nominees">&#182;</a></h3><p>We aren't done yet! We need to create these same 3 dataframes, but for the current nominees for each award. The data collection process is similar once again, so it is reproduced below.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">playlist_tracks</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">user_playlist_tracks</span><span class="p">(</span><span class="s1">&#39;22b7g6udnfkubfplnsla3ww5a&#39;</span><span class="p">,</span> <span class="s1">&#39;7InjGr6kiABbxyV5q9GPW1&#39;</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="s1">&#39;items,uri,name,id,total&#39;</span><span class="p">,</span> <span class="n">market</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">)</span>
+
+<span class="n">name</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">date</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">pop</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">dance</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">energy</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">loud</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">speech</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">acous</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">live</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">valence</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">tempo</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">playlist_tracks</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]:</span>
+    <span class="n">name</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+    <span class="n">date</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;release_date&#39;</span><span class="p">])</span>
+    <span class="n">pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;popularity&#39;</span><span class="p">])</span>
+    <span class="n">dance</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;danceability&#39;</span><span class="p">])</span>
+    <span class="n">energy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;energy&#39;</span><span class="p">])</span>
+    <span class="n">loud</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;loudness&#39;</span><span class="p">])</span>
+    <span class="n">speech</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;speechiness&#39;</span><span class="p">])</span>
+    <span class="n">acous</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;acousticness&#39;</span><span class="p">])</span>
+    <span class="n">live</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;liveness&#39;</span><span class="p">])</span>
+    <span class="n">valence</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;valence&#39;</span><span class="p">])</span>
+    <span class="n">tempo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;tempo&#39;</span><span class="p">])</span>
+
+<span class="n">songdata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Date Released&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Popularity&quot;</span><span class="p">,</span> <span class="n">pop</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;Danceability&quot;</span><span class="p">,</span> <span class="n">dance</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;Energy&quot;</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;Loudness&quot;</span><span class="p">,</span> <span class="n">loud</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="s2">&quot;Speechiness&quot;</span><span class="p">,</span> <span class="n">speech</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s2">&quot;Acousticness&quot;</span><span class="p">,</span> <span class="n">acous</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;Liveness&quot;</span><span class="p">,</span> <span class="n">live</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="s2">&quot;Valence&quot;</span><span class="p">,</span> <span class="n">valence</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;Tempo&quot;</span><span class="p">,</span> <span class="n">tempo</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="n">songdata</span>
+<span class="n">songdata</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;2020songs.csv&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">songdb2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;2020songs.csv&quot;</span><span class="p">)</span>
+<span class="n">songdb2</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[7]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Name</th>
+      <th>Date Released</th>
+      <th>Popularity</th>
+      <th>Danceability</th>
+      <th>Energy</th>
+      <th>Loudness</th>
+      <th>Speechiness</th>
+      <th>Acousticness</th>
+      <th>Liveness</th>
+      <th>Valence</th>
+      <th>Tempo</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Always Remember Us This Way</td>
+      <td>2018-10-05</td>
+      <td>82</td>
+      <td>0.553</td>
+      <td>0.502</td>
+      <td>-5.972</td>
+      <td>0.0409</td>
+      <td>0.299</td>
+      <td>0.7640</td>
+      <td>0.296</td>
+      <td>129.976</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>bad guy</td>
+      <td>2019-03-29</td>
+      <td>96</td>
+      <td>0.701</td>
+      <td>0.425</td>
+      <td>-10.965</td>
+      <td>0.3750</td>
+      <td>0.328</td>
+      <td>0.1000</td>
+      <td>0.562</td>
+      <td>135.128</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Bring My Flowers Now</td>
+      <td>2019-08-23</td>
+      <td>42</td>
+      <td>0.557</td>
+      <td>0.198</td>
+      <td>-9.911</td>
+      <td>0.0461</td>
+      <td>0.948</td>
+      <td>0.2170</td>
+      <td>0.336</td>
+      <td>133.823</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Hard Place</td>
+      <td>2018-11-02</td>
+      <td>70</td>
+      <td>0.614</td>
+      <td>0.719</td>
+      <td>-4.694</td>
+      <td>0.0955</td>
+      <td>0.179</td>
+      <td>0.1630</td>
+      <td>0.340</td>
+      <td>160.075</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Lover</td>
+      <td>2019-08-23</td>
+      <td>88</td>
+      <td>0.359</td>
+      <td>0.543</td>
+      <td>-7.582</td>
+      <td>0.0919</td>
+      <td>0.492</td>
+      <td>0.1180</td>
+      <td>0.453</td>
+      <td>68.534</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Norman fucking Rockwell</td>
+      <td>2019-08-30</td>
+      <td>77</td>
+      <td>0.218</td>
+      <td>0.215</td>
+      <td>-12.490</td>
+      <td>0.0368</td>
+      <td>0.967</td>
+      <td>0.0948</td>
+      <td>0.138</td>
+      <td>76.740</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Someone You Loved</td>
+      <td>2019-05-17</td>
+      <td>96</td>
+      <td>0.501</td>
+      <td>0.405</td>
+      <td>-5.679</td>
+      <td>0.0319</td>
+      <td>0.751</td>
+      <td>0.1050</td>
+      <td>0.446</td>
+      <td>109.891</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>Truth Hurts</td>
+      <td>2019-05-03</td>
+      <td>91</td>
+      <td>0.715</td>
+      <td>0.624</td>
+      <td>-3.046</td>
+      <td>0.1140</td>
+      <td>0.110</td>
+      <td>0.1230</td>
+      <td>0.412</td>
+      <td>158.087</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">playlist_albums</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">user_playlist_tracks</span><span class="p">(</span><span class="s1">&#39;22b7g6udnfkubfplnsla3ww5a&#39;</span><span class="p">,</span> <span class="s1">&#39;3uMdi0Gvd3rEp2aiWjy5jM&#39;</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="s1">&#39;items,uri,name,id,total&#39;</span><span class="p">,</span> <span class="n">market</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">)</span>
+<span class="n">playlist_albums</span>
+
+<span class="n">albums</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">date</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">pop</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">dance</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">energy</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">loud</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">speech</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">acous</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">live</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">valence</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">tempo</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">playlist_albums</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]:</span>
+    <span class="n">name</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+    <span class="n">date</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;release_date&#39;</span><span class="p">])</span>
+    <span class="n">pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;popularity&#39;</span><span class="p">])</span>
+    <span class="n">albums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+
+<span class="n">danceavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">energyavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">loudavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">speechavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">acousavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">liveavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">valenceavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">tempoavg</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">albums</span><span class="p">:</span>
+    <span class="n">songs</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">album_tracks</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">songs</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]:</span>
+        <span class="n">danceavg</span> <span class="o">=</span> <span class="n">danceavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;danceability&#39;</span><span class="p">]</span>
+        <span class="n">energyavg</span> <span class="o">=</span> <span class="n">energyavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;energy&#39;</span><span class="p">]</span>
+        <span class="n">loudavg</span> <span class="o">=</span> <span class="n">loudavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;loudness&#39;</span><span class="p">]</span>
+        <span class="n">speechavg</span> <span class="o">=</span> <span class="n">speechavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;speechiness&#39;</span><span class="p">]</span>
+        <span class="n">acousavg</span> <span class="o">=</span> <span class="n">acousavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;acousticness&#39;</span><span class="p">]</span>
+        <span class="n">liveavg</span> <span class="o">=</span> <span class="n">liveavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;liveness&#39;</span><span class="p">]</span>
+        <span class="n">valenceavg</span> <span class="o">=</span> <span class="n">valenceavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;valence&#39;</span><span class="p">]</span>
+        <span class="n">tempoavg</span> <span class="o">=</span> <span class="n">tempoavg</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">audio_features</span><span class="p">(</span><span class="s1">&#39;spotify:track:&#39;</span><span class="o">+</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;tempo&#39;</span><span class="p">]</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">dance</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">danceavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">energy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">energyavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">loud</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loudavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">speech</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">speechavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">acous</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">acousavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">live</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">liveavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">valence</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">valenceavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">tempo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tempoavg</span><span class="o">/</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">danceavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">energyavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">loudavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">speechavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">acousavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">liveavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">valenceavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">tempoavg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    
+
+<span class="n">albumdata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Date Released&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Popularity&quot;</span><span class="p">,</span> <span class="n">pop</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;Danceability&quot;</span><span class="p">,</span> <span class="n">dance</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;Energy&quot;</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;Loudness&quot;</span><span class="p">,</span> <span class="n">loud</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="s2">&quot;Speechiness&quot;</span><span class="p">,</span> <span class="n">speech</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s2">&quot;Acousticness&quot;</span><span class="p">,</span> <span class="n">acous</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;Liveness&quot;</span><span class="p">,</span> <span class="n">live</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="s2">&quot;Valence&quot;</span><span class="p">,</span> <span class="n">valence</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;Tempo&quot;</span><span class="p">,</span> <span class="n">tempo</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="n">albumdata</span>
+<span class="n">albumdata</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;2020albums.csv&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">albumdb2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;2020albums.csv&quot;</span><span class="p">)</span>
+<span class="n">albumdb2</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[8]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Name</th>
+      <th>Date Released</th>
+      <th>Popularity</th>
+      <th>Danceability</th>
+      <th>Energy</th>
+      <th>Loudness</th>
+      <th>Speechiness</th>
+      <th>Acousticness</th>
+      <th>Liveness</th>
+      <th>Valence</th>
+      <th>Tempo</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>i,i</td>
+      <td>2019-08-09</td>
+      <td>58</td>
+      <td>0.465231</td>
+      <td>0.324862</td>
+      <td>-12.271923</td>
+      <td>0.098315</td>
+      <td>0.875923</td>
+      <td>0.239092</td>
+      <td>0.249631</td>
+      <td>106.955769</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Norman Fucking Rockwell!</td>
+      <td>2019-08-30</td>
+      <td>77</td>
+      <td>0.434214</td>
+      <td>0.271457</td>
+      <td>-11.989429</td>
+      <td>0.042664</td>
+      <td>0.823000</td>
+      <td>0.120293</td>
+      <td>0.228979</td>
+      <td>97.773857</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?</td>
+      <td>2019-03-29</td>
+      <td>96</td>
+      <td>0.583786</td>
+      <td>0.281721</td>
+      <td>-15.085071</td>
+      <td>0.193086</td>
+      <td>0.656857</td>
+      <td>0.239307</td>
+      <td>0.288007</td>
+      <td>105.494286</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>thank u, next</td>
+      <td>2019-02-08</td>
+      <td>89</td>
+      <td>0.668250</td>
+      <td>0.525583</td>
+      <td>-6.622000</td>
+      <td>0.141642</td>
+      <td>0.298733</td>
+      <td>0.154742</td>
+      <td>0.388917</td>
+      <td>113.231167</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>I Used To Know Her</td>
+      <td>2019-08-30</td>
+      <td>60</td>
+      <td>0.549263</td>
+      <td>0.492421</td>
+      <td>-9.299053</td>
+      <td>0.165763</td>
+      <td>0.471753</td>
+      <td>0.167553</td>
+      <td>0.370826</td>
+      <td>107.297263</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>7 EP</td>
+      <td>2019-06-21</td>
+      <td>88</td>
+      <td>0.751500</td>
+      <td>0.586625</td>
+      <td>-6.646625</td>
+      <td>0.110963</td>
+      <td>0.152750</td>
+      <td>0.158362</td>
+      <td>0.531375</td>
+      <td>142.742375</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Cuz I Love You</td>
+      <td>2019-04-19</td>
+      <td>67</td>
+      <td>0.706818</td>
+      <td>0.731545</td>
+      <td>-4.324364</td>
+      <td>0.129882</td>
+      <td>0.051543</td>
+      <td>0.304291</td>
+      <td>0.631727</td>
+      <td>127.846545</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>Father of the Bride</td>
+      <td>2019-05-03</td>
+      <td>62</td>
+      <td>0.642389</td>
+      <td>0.504167</td>
+      <td>-7.761889</td>
+      <td>0.062189</td>
+      <td>0.522978</td>
+      <td>0.168917</td>
+      <td>0.527778</td>
+      <td>118.150222</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">playlist_artists</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">user_playlist_tracks</span><span class="p">(</span><span class="s1">&#39;22b7g6udnfkubfplnsla3ww5a&#39;</span><span class="p">,</span> <span class="s1">&#39;5Ihltik64Mn9LOlhgya8UE&#39;</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="s1">&#39;items,uri,name,id,total&#39;</span><span class="p">,</span> <span class="n">market</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">)</span>
+<span class="n">playlist_artists</span>
+
+<span class="n">name</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">followers</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">pop</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">playlist_artists</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]:</span>
+    <span class="n">name</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;artists&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+    <span class="n">artist</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">artist</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;track&#39;</span><span class="p">][</span><span class="s1">&#39;album&#39;</span><span class="p">][</span><span class="s1">&#39;artists&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+    <span class="n">followers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">artist</span><span class="p">[</span><span class="s1">&#39;followers&#39;</span><span class="p">][</span><span class="s1">&#39;total&#39;</span><span class="p">])</span>
+    <span class="n">pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">artist</span><span class="p">[</span><span class="s1">&#39;popularity&#39;</span><span class="p">])</span>
+
+    
+<span class="n">artistdata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+<span class="n">artistdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">artistdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Followers&quot;</span><span class="p">,</span> <span class="n">followers</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">artistdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Popularity&quot;</span><span class="p">,</span> <span class="n">pop</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="n">artistdata</span>
+<span class="n">artistdata</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;2020artists.csv&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">artistdb2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;2020artists.csv&quot;</span><span class="p">)</span>
+<span class="n">artistdb2</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[9]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Name</th>
+      <th>Followers</th>
+      <th>Popularity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Black Pumas</td>
+      <td>71329</td>
+      <td>61</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Billie Eilish</td>
+      <td>17055834</td>
+      <td>98</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Lil Nas X</td>
+      <td>1900496</td>
+      <td>87</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Lizzo</td>
+      <td>1602632</td>
+      <td>88</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Maggie Rogers</td>
+      <td>509106</td>
+      <td>76</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>ROSALÍA</td>
+      <td>1970207</td>
+      <td>85</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Tank and The Bangas</td>
+      <td>115219</td>
+      <td>50</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>Yola</td>
+      <td>26757</td>
+      <td>54</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Now-that-we-have-our-data...">Now that we have our data...<a class="anchor-link" href="#Now-that-we-have-our-data...">&#182;</a></h3><p>Let's create our own function to help later on when displaying the data. This function below will take in two data entries and plot them overlapping on a <a href="https://www.data-to-viz.com/caveat/spider.html">radar graph, also known as a spider chart</a>. Pretty cool!</p>
 
 </div>
 </div>
@@ -13087,40 +14740,7 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">spotipy</span>
-<span class="kn">from</span> <span class="nn">spotipy.oauth2</span> <span class="k">import</span> <span class="n">SpotifyClientCredentials</span>
-<span class="kn">import</span> <span class="nn">spotipy.util</span> <span class="k">as</span> <span class="nn">util</span>
-<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">pylab</span> <span class="k">as</span> <span class="nn">pl</span>
-
-<span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">tree</span><span class="p">,</span> <span class="n">ensemble</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">,</span> <span class="n">model_selection</span><span class="p">,</span> <span class="n">metrics</span>
-<span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">tree</span>
-<span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">svm</span><span class="p">,</span> <span class="n">metrics</span>
-<span class="kn">from</span> <span class="nn">sklearn.neighbors</span> <span class="k">import</span> <span class="n">KNeighborsClassifier</span>
-<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="k">import</span> <span class="n">RandomForestClassifier</span>
-<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">train_test_split</span><span class="p">,</span> <span class="n">cross_val_predict</span>
-<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="k">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">HTML</span>
-
-<span class="c1"># Functions used to plot radar graphs. Second function is different in that it plots two on top of each other</span>
-<span class="k">def</span> <span class="nf">radar_graph</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">stats</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
-    <span class="c1"># Radar graph</span>
-    <span class="n">angles</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">),</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">stats</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">stats</span><span class="p">,[</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">]]))</span>
-    <span class="n">angles</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">angles</span><span class="p">,[</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]]))</span>
-
-    <span class="n">fig</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">polar</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">angles</span><span class="p">,</span> <span class="n">stats</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">angles</span><span class="p">,</span> <span class="n">stats</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_thetagrids</span><span class="p">(</span><span class="n">angles</span> <span class="o">*</span> <span class="mi">180</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
-    
-<span class="k">def</span> <span class="nf">radar_graphs</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">stats</span><span class="p">,</span> <span class="n">stats2</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">radar_graphs</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">stats</span><span class="p">,</span> <span class="n">stats2</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
     <span class="c1"># Radar graphs</span>
     <span class="n">angles</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">),</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">stats</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">stats</span><span class="p">,[</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">]]))</span>
@@ -13147,7 +14767,7 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Data-Analysis">Data Analysis<a class="anchor-link" href="#Data-Analysis">&#182;</a></h2><p>Querying an API for every nomination across three categories over the past twenty years takes <em>a lot</em> of time! So what we did was we made it easy for everyone to use the same data through exporting the data to csv files once, and reading directly from the file for the remainder of the time!</p>
+<h1 id="Data-Analysis">Data Analysis<a class="anchor-link" href="#Data-Analysis">&#182;</a></h1><p>Like we mentioned above, querying an API for every nomination across three categories over the past twenty years takes <em>a lot</em> of time! So what we did was we made it easy for everyone to use the same data through exporting the data to csv files once, and reading directly from the file for the remainder of the time! Just only run the cells from this point onward to save yourself some time.</p>
 
 </div>
 </div>
@@ -15326,6 +16946,19 @@ random forest: 		[0 1 0 0 0 0 0 0]
 
 </div>
 </div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
+</pre></div>
+
+    </div>
+</div>
+</div>
+
 </div>
     </div>
   </div>
